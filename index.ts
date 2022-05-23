@@ -28,7 +28,9 @@ const sendMessagetoDiscord = async () => {
     console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
     const bigquery = new BigQuery({
         projectId: process.env.PROJECT_ID,
-        keyFilename: "./google-credentials.json",
+        keyFilename:
+            process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+            "./google-credentials.json",
     });
     // Queries the U.S. given names dataset for the state of Texas.
 
