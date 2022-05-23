@@ -8,6 +8,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+console.log(PORT);
 
 app.use(express.json());
 
@@ -27,9 +28,7 @@ const sendMessagetoDiscord = async () => {
     console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
     const bigquery = new BigQuery({
         projectId: process.env.PROJECT_ID,
-        keyFilename:
-            process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-            "./google-credentials.json",
+        keyFilename: "./google-credentials.json",
     });
     // Queries the U.S. given names dataset for the state of Texas.
 
