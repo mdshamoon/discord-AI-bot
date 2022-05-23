@@ -24,6 +24,7 @@ const client = new DiscordJS.Client({
 });
 
 const sendMessagetoDiscord = async () => {
+    console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
     const bigquery = new BigQuery({
         projectId: process.env.PROJECT_ID,
         keyFilename:
