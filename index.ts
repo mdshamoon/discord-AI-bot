@@ -25,7 +25,6 @@ const client = new DiscordJS.Client({
 });
 
 const sendMessagetoDiscord = async () => {
-    console.log(process.env.GOOGLE_APPLICATION_CREDENTIALS);
     const bigquery = new BigQuery({
         projectId: process.env.PROJECT_ID,
         keyFilename: "./google-credentials.json",
@@ -54,11 +53,21 @@ const sendMessagetoDiscord = async () => {
     let totalContacts = 0;
     let totalMessages = 0;
 
+    let mostMessagedNGO = 0;
+    let mostMessagedNGOName = "";
+
     let messages = "";
+
+    rows.sort((a: any, b: any) => a.messages - b.messages);
 
     rows.forEach((row: any) => {
         totalContacts = totalContacts + row.contacts;
         totalMessages = totalMessages + row.messages;
+        if (row.messages > mostMessagedNGO) {
+            mostMessagedNGOName =
+                row.organization_name + "- " + row.messages + "\n";
+            mostMessagedNGO = row.messages;
+        }
         if (row.messages > 0) {
             messages =
                 messages + row.organization_name + ": " + row.messages + "\n";
@@ -69,13 +78,13 @@ const sendMessagetoDiscord = async () => {
         "-----------\n" +
         "**Date**: " +
         new Date().toLocaleDateString() +
-        "\n" +
-        "**Total contacts:** " +
+        "\n\n**Total contacts:** " +
         totalContacts +
-        "\n" +
-        "**Messages yesterday:** " +
+        "\n**Messages yesterday:** " +
         totalMessages +
-        "\n\n**Messages per NGO**\n" +
+        "\n**Most messaged NGO:** " +
+        mostMessagedNGOName +
+        "\n**Messages per NGO**\n" +
         messages;
 
     const guildId = process.env.GUILD_ID || "";
