@@ -106,9 +106,7 @@ const sendMessagetoDiscord = async () => {
     }
 };
 
-client.on("ready", async () => {
-    sendMessagetoDiscord();
-});
+client.on("ready", async () => {});
 
 client.login(process.env.BOT_TOKEN);
 
