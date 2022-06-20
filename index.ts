@@ -1,4 +1,4 @@
-import DiscordJS from "discord.js";
+import DiscordJS, { EmbedBuilder } from "discord.js";
 import dotenv from "dotenv";
 import express from "express";
 const { BigQuery } = require("@google-cloud/bigquery");
@@ -8,7 +8,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-console.log(PORT);
 
 app.use(express.json());
 
@@ -53,39 +52,29 @@ const sendMessagetoDiscord = async () => {
     let totalContacts = 0;
     let totalMessages = 0;
 
-    let mostMessagedNGO = 0;
-    let mostMessagedNGOName = "";
-
+    let organizationNames = "";
     let messages = "";
+    let incomingVsOutgoingMessages = "";
 
-    rows.sort((a: any, b: any) => a.messages - b.messages);
+    rows.sort((a: any, b: any) => b.messages - a.messages);
 
     rows.forEach((row: any) => {
         totalContacts = totalContacts + row.contacts;
         totalMessages = totalMessages + row.messages;
-        if (row.messages > mostMessagedNGO) {
-            mostMessagedNGOName =
-                row.organization_name + "- " + row.messages + "\n";
-            mostMessagedNGO = row.messages;
-        }
+
         if (row.messages > 0) {
-            messages =
-                messages + row.organization_name + ": " + row.messages + "\n";
+            incomingVsOutgoingMessages =
+                incomingVsOutgoingMessages +
+                row.inbound +
+                " / " +
+                row.outbound +
+                "\n";
+
+            messages = messages + row.messages + "\n";
+            organizationNames =
+                organizationNames + row.organization_name + "\n";
         }
     });
-
-    const finalMessage =
-        "-----------\n" +
-        "**Date**: " +
-        new Date().toLocaleDateString() +
-        "\n\n**Total contacts:** " +
-        totalContacts +
-        "\n**Messages yesterday:** " +
-        totalMessages +
-        "\n**Most messaged NGO:** " +
-        mostMessagedNGOName +
-        "\n**Messages per NGO**\n" +
-        messages;
 
     const guildId = process.env.GUILD_ID || "";
     const channleId = process.env.CHANNEL_ID || "";
@@ -100,9 +89,36 @@ const sendMessagetoDiscord = async () => {
         channels = client.channels;
     }
 
+    const finalMessage = new EmbedBuilder()
+        .setColor("#0099ff")
+        .setTitle("Date: " + new Date().toLocaleDateString())
+        .setDescription(
+            "\n\n**Total contacts:** " +
+                totalContacts +
+                "\n**Messages yesterday:** " +
+                totalMessages
+        )
+        .addFields([
+            {
+                name: "NGO name",
+                value: organizationNames,
+                inline: true,
+            },
+            {
+                name: "Messages",
+                value: messages,
+                inline: true,
+            },
+            {
+                name: "Incoming / outgoing",
+                value: incomingVsOutgoingMessages,
+                inline: true,
+            },
+        ]);
+
     const channel = channels.cache.get(channleId);
     if (channel?.isText()) {
-        channel.send(finalMessage);
+        channel.send({ embeds: [finalMessage] });
     }
 };
 
