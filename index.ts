@@ -1,9 +1,5 @@
 import dotenv from "dotenv";
-import DiscordJS, {
-    ChannelType,
-    GatewayIntentBits,
-  
-} from "discord.js";
+import DiscordJS, { ChannelType, GatewayIntentBits } from "discord.js";
 import axios from "axios";
 const express = require("express");
 dotenv.config();
@@ -32,7 +28,10 @@ const client = new DiscordJS.Client({
 client.on("ready", async () => {});
 
 client.on("threadCreate", async (thread) => {
-    if (thread.parent?.type === ChannelType.GuildForum) {
+    if (
+        thread.parent?.type === ChannelType.GuildForum &&
+        thread.parentId === process.env.CHANNEL_ID
+    ) {
         const firstMessage = await thread.fetchStarterMessage();
         const message = firstMessage?.content || "";
 
@@ -55,14 +54,14 @@ const getAnswerFromJugalbandi = async (message: string) => {
 
     const params = {
         uuid_number: process.env.GLIFIC_DOC_UUID || "",
-        query_string: message,
+        query_string: encodeURIComponent(message),
     };
     // Convert the params object into a query string
     const queryParams = new URLSearchParams(params).toString();
 
     try {
         const result = await axios.get(`${apiUrl}?${queryParams}`, {
-            timeout: 60000,
+            timeout: 120000,
         });
         return result.data.answer;
     } catch (e) {
@@ -73,4 +72,3 @@ const getAnswerFromJugalbandi = async (message: string) => {
 client.on("ready", async () => {});
 
 client.login(process.env.BOT_TOKEN);
-
