@@ -1,1 +1,1 @@
-# Discord Jugalbandi discord bot
+# Discord Jugalbandi AI bot
