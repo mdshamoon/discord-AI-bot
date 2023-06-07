@@ -1,1 +1,1 @@
-# Discord bigquery stats bot
+# Discord Jugalbandi discord bot
