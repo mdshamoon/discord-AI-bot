@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>OpenAI Chat</title>
+    </head>
+    <body>
+        <h1>OpenAI Chat</h1>
+        <form action="https://localhost:3000/chat" method="post">
+            <input
+                type="text"
+                name="user_input"
+                placeholder="Enter your message..."
+            />
+            <input type="submit" value="Send" />
+        </form>
+        <div id="output"></div>
+
+        <script>
+            const form = document.querySelector("form");
+            const outputDiv = document.getElementById("output");
+
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const userMessage = formData.get("user_input");
+
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    body: new URLSearchParams({ user_input: userMessage }),
+                });
+                const reply = await response.text();
+                outputDiv.innerHTML += `<p><strong>User:</strong> ${userMessage}</p>`;
+                outputDiv.innerHTML += `<p><strong>Bot:</strong> ${reply}</p>`;
+
+                form.reset();
+            });
+        </script>
+    </body>
+</html>
