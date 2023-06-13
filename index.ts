@@ -1,5 +1,9 @@
 import dotenv from "dotenv";
-import DiscordJS, { ChannelType, GatewayIntentBits } from "discord.js";
+import DiscordJS, {
+    ChannelType,
+    EmbedBuilder,
+    GatewayIntentBits,
+} from "discord.js";
 import axios from "axios";
 import express from "express";
 import bodyParser from "body-parser";
@@ -55,6 +59,22 @@ client.on("threadCreate", async (thread) => {
     ) {
         const firstMessage = await thread.fetchStarterMessage();
         const message = firstMessage?.content || "";
+
+        const startingMessage = new EmbedBuilder()
+            .setColor("#0099ff")
+            .setTitle(
+                "Please add the following details in case the issue is related to a contact/flow"
+            )
+            .setDescription(
+                "\n\n**In case of flow:** " +
+                    "link of the flow and the contact for which the issue was faced" +
+                    "\n**In case of contact:** " +
+                    "link of the chat for the contact" +
+                    "\n\nMeanwhile we are looking into your query and we will revert back soon"
+            );
+
+        await thread.send({ embeds: [startingMessage] });
+        thread.sendTyping();
 
         const answer = await getAnswerFromJugalbandi(message);
         const role = thread.guild.roles.cache.find(
