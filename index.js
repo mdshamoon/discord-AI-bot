@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import DiscordJS, { ChannelType, EmbedBuilder, GatewayIntentBits, } from "discord.js";
+import DiscordJS, { ApplicationCommandOptionType, ChannelType, EmbedBuilder, GatewayIntentBits, } from "discord.js";
 import axios from "axios";
 import express from "express";
 import bodyParser from "body-parser";
@@ -37,7 +37,55 @@ const getAnswerFromJugalbandi = async (message) => {
 const client = new DiscordJS.Client({
     intents: ["Guilds", "GuildMessages", GatewayIntentBits.MessageContent],
 });
-client.on("ready", async () => { });
+async function registerCommand() {
+    try {
+        // Fetch the guild (server) where the bot is connected
+        const guild = client.guilds.cache.get(process.env.GUILD_ID || "");
+        if (guild) {
+            // Create the command
+            const command = await guild.commands.create({
+                name: "askglific",
+                description: "Ask a question to GPT model",
+                options: [
+                    {
+                        name: "question",
+                        description: "The question you want to ask",
+                        type: ApplicationCommandOptionType.String,
+                        required: true,
+                    },
+                ],
+            });
+            console.log(`Registered command: ${command.name}`);
+        }
+    }
+    catch (error) {
+        console.error("Error registering command:", error);
+    }
+}
+// Event that triggers when a user interacts with a registered command
+client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isCommand())
+        return;
+    // Handle the askGPT command
+    if (interaction.commandName === "askglific") {
+        // Join the arguments to form the user's question
+        const question = interaction.options.get("question")?.value?.toString();
+        if (question) {
+            interaction.reply({
+                content: `Your question **${question}** is getting processed...`,
+                ephemeral: false,
+            });
+            const answer = await getAnswerFromJugalbandi(question);
+            await interaction.followUp(answer);
+        }
+        else {
+            interaction.reply("Unable to answer the query");
+        }
+    }
+});
+client.on("ready", async () => {
+    registerCommand();
+});
 client.login(process.env.BOT_TOKEN);
 client.on("threadCreate", async (thread) => {
     if (thread.parent?.type === ChannelType.GuildForum &&
