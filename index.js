@@ -184,7 +184,7 @@ client.on("threadCreate", async (thread) => {
         const message = firstMessage?.content || "";
         const author = firstMessage?.author.username || "";
         thread.sendTyping();
-        thread.send(`Thank you for reaching out! 🌟 Our support team is currently on leave this week, and there might be a delay in answering your queries. However, we have one dedicated team member who will be checking for critical issues every 3-4 hours.
+        thread.send(`Thank you for reaching out! 🌟 Our support team is currently on leave this week, and there might be a delay in answering your queries. However, we have one dedicated team member who will be checking for critical issues every 3-4 hours. 
         If your matter is urgent or critical, please be assured that someone will respond to you as soon as possible. For non-critical issues, we appreciate your patience and understanding during this time.
         `);
         const answer = await getAnswerFromJugalbandi(message, defaultPrompt);
