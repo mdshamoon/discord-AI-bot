@@ -1,8 +1,13 @@
 import dotenv from "dotenv";
 import DiscordJS, {
+    ActionRowBuilder,
     ApplicationCommandOptionType,
     ChannelType,
+    ForumChannel,
     GatewayIntentBits,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    ThreadChannel,
 } from "discord.js";
 import axios from "axios";
 import express from "express";
@@ -243,9 +248,144 @@ async function registerCommand() {
     }
 }
 
+function processStringArray(
+    arr: Array<{ id: string; timeSpanned: number }>,
+    chunkSize = 10,
+    separator = "\n"
+) {
+    const result = [];
+
+    const links = arr.map((ar) => {
+        const daysDifference = Math.floor(
+            ar.timeSpanned / (1000 * 60 * 60 * 24)
+        );
+        const hoursDifference = Math.floor(
+            (ar.timeSpanned % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+
+        return `https://discord.com/channels/${process.env.CHANNEL_ID}/${ar.id} => Interaction time: ${daysDifference} days and ${hoursDifference} hours`;
+    });
+    for (let i = 0; i < links.length; i += chunkSize) {
+        const chunk = links.slice(i, i + chunkSize);
+        const appendedString = chunk.join(separator);
+        result.push(appendedString);
+    }
+    return result;
+}
+
+let noOfDays = "0";
 // Event that triggers when a user interacts with a registered command
 client.on("interactionCreate", async (interaction) => {
+    if (interaction.isStringSelectMenu()) {
+        let today = new Date();
+
+        // Create a new date object representing 30 days prior
+        let xDaysAgo = new Date(today.getTime()); // Copy the current date
+        xDaysAgo.setDate(xDaysAgo.getDate() - parseInt(noOfDays));
+        const targetTagId = interaction.values[0];
+
+        const ngoSupportForum = (await client.channels.fetch(
+            process.env.CHANNEL_ID || ""
+        )) as ForumChannel;
+
+        console.log(ngoSupportForum);
+
+        const threads = await Promise.all([
+            ngoSupportForum.threads.fetchActive(),
+            ngoSupportForum.threads.fetchArchived({ fetchAll: true }),
+        ]);
+
+        let collections = new Map<string, ThreadChannel>();
+
+        threads.forEach((thread) => {
+            collections = new Map([...collections, ...thread.threads]);
+        });
+        const allIDs: Array<{ id: string; timeSpanned: number }> = [];
+        if (targetTagId === "None") {
+            for (let [key, value] of collections) {
+                if (
+                    value.createdTimestamp &&
+                    value.appliedTags.length === 0 &&
+                    value.createdTimestamp > xDaysAgo.getTime()
+                ) {
+                    allIDs.push({ id: key, timeSpanned: 0 });
+                }
+            }
+            await interaction.reply(
+                `${allIDs.length} threads have not been tagged in ${noOfDays} days`
+            );
+        } else {
+            await interaction.reply(`Searching...`);
+            for (let [key, value] of collections) {
+                if (
+                    value.createdTimestamp &&
+                    value.appliedTags.includes(targetTagId) &&
+                    value.createdTimestamp > xDaysAgo.getTime()
+                ) {
+                    const messages = await value.messages.fetch({ limit: 1 });
+                    let lastMessage;
+
+                    for (let [id, message] of messages) {
+                        lastMessage = message;
+                    }
+
+                    const timeSpanned =
+                        (lastMessage?.createdTimestamp || 0) -
+                        value.createdTimestamp;
+                    allIDs.push({ id: key, timeSpanned: timeSpanned });
+                }
+            }
+            await interaction.channel?.send(
+                `You have ${allIDs.length} threads with this tag within ${noOfDays} days`
+            );
+        }
+
+        const finalResult = processStringArray(allIDs);
+
+        finalResult.forEach(async (result) => {
+            await interaction.channel?.send(result);
+        });
+    }
     if (!interaction.isCommand()) return;
+
+    if (interaction.commandName === "support-metrics") {
+        // Join the arguments to form the user's question
+        noOfDays = interaction.options.get("days")?.value?.toString() || "0";
+
+        const ngoSupportForum = (await client.channels.fetch(
+            process.env.CHANNEL_ID || ""
+        )) as ForumChannel;
+
+        const availableTags = await ngoSupportForum.availableTags;
+
+        const option: StringSelectMenuOptionBuilder[] = [
+            new StringSelectMenuOptionBuilder()
+                .setLabel("None")
+                .setValue("None"),
+        ];
+        availableTags.forEach((tag) => {
+            option.push(
+                new StringSelectMenuOptionBuilder()
+                    .setLabel(tag.name)
+                    .setValue(tag.id)
+            );
+        });
+
+        const select = new StringSelectMenuBuilder()
+            .setCustomId("starter")
+            .setPlaceholder("Select a tag to look for")
+            .addOptions(option);
+
+        const row =
+            new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+                select
+            );
+
+        const reply = await interaction.reply({
+            content: "Choose your tag!",
+            components: [row],
+        });
+    }
 
     // Handle the askGPT command
     if (interaction.commandName === "askglific") {
