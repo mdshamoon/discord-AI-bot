@@ -454,10 +454,6 @@ client.on("threadCreate", async (thread) => {
 
         thread.sendTyping();
 
-        thread.send(
-            "Please note that from the 29th July to the 2nd August, our team will be engaged in an in-person sprint. During this time, responses may be slower than usual. We appreciate your patience and will get back to you as soon as possible. Thank you!"
-        );
-
         const answer = await getAnswerFromOpenAIAssistant(message, "");
         const role = thread.guild.roles.cache.find(
             (role) => role.name === "Glific Support"
