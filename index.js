@@ -72,17 +72,7 @@ const writeDataToSheets = async (question, answer, category, author) => {
     catch (error) { }
     const service = google.sheets({ version: "v4", auth });
     let values = [
-        [
-            new Date(),
-            author,
-            question,
-            tag1,
-            tag2,
-            tag3,
-            reason,
-            category,
-            answer,
-        ],
+        [new Date(), author, question, tag1, tag2, tag3, reason, category, answer],
     ];
     const requestBody = {
         values,
@@ -163,7 +153,7 @@ const getAnswerFromOpenAIAssistant = async (message, prompt) => {
         return "Sorry, I am not able to answer this question due to timeout in API. Please try again later.";
     }
     catch (e) {
-        return "Sorry, I am not able to answer this question due to timeout in API. Please try again later.";
+        return "Sorry, I am not able to answer this question due to timeout in API. Please try again later";
     }
 };
 const client = new DiscordJS.Client({
@@ -262,8 +252,7 @@ client.on("interactionCreate", async (interaction) => {
                     for (let [id, message] of messages) {
                         lastMessage = message;
                     }
-                    const timeSpanned = (lastMessage?.createdTimestamp || 0) -
-                        value.createdTimestamp;
+                    const timeSpanned = (lastMessage?.createdTimestamp || 0) - value.createdTimestamp;
                     allIDs.push({ id: key, timeSpanned: timeSpanned });
                 }
             }
@@ -282,14 +271,10 @@ client.on("interactionCreate", async (interaction) => {
         const ngoSupportForum = (await client.channels.fetch(process.env.CHANNEL_ID || ""));
         const availableTags = await ngoSupportForum.availableTags;
         const option = [
-            new StringSelectMenuOptionBuilder()
-                .setLabel("None")
-                .setValue("None"),
+            new StringSelectMenuOptionBuilder().setLabel("None").setValue("None"),
         ];
         availableTags.forEach((tag) => {
-            option.push(new StringSelectMenuOptionBuilder()
-                .setLabel(tag.name)
-                .setValue(tag.id));
+            option.push(new StringSelectMenuOptionBuilder().setLabel(tag.name).setValue(tag.id));
         });
         const select = new StringSelectMenuBuilder()
             .setCustomId("starter")
